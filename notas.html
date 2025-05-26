@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<body style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; margin:0; font-family:sans-serif;">
+
+  <input id="peliculaInput" type="text" placeholder="Nombre de la pelicula/serie" style="margin-bottom:10px; padding:5px;">
+  <button onclick="enviar()" style="padding:5px 10px;">Aceptar</button>
+
+  <pre id="resultado" style="margin-top:20px; white-space:pre-wrap; text-align:left; max-width:400px;"></pre>
+
+  <script>
+    function colorClase(nota) {
+      if (typeof nota !== 'number') return '';
+      if (nota < 5) return 'color: #990000; background-color: #ffcccc; font-weight:bold; padding:2px 5px; border-radius:3px;';
+      if (nota < 7) return 'color: #994d00; background-color: #ffe0b3; font-weight:bold; padding:2px 5px; border-radius:3px;';
+      if (nota < 9) return 'color: #006600; background-color: #ccffcc; font-weight:bold; padding:2px 5px; border-radius:3px;';
+      return 'color: #004d00; background-color: #99e699; font-weight:bold; padding:2px 5px; border-radius:3px;';
+    }
+
+    function enviar() {
+      const titulo = document.getElementById('peliculaInput').value.trim();
+      const resultado = document.getElementById('resultado');
+      if (!titulo) {
+        resultado.textContent = 'Por favor, introduce un nombre valido.';
+        return;
+      }
+      resultado.textContent = 'Cargando...';
+
+      fetch('http://127.0.0.1:5000/api/notas', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ pelicula: titulo })
+      })
+      .then(response => response.json())
+      .then(data => {
+        const notas = data.notas || {};
+        let audiencia = {};
+        let criticas = {};
+        // separar notas según sufijo _critic
+        Object.entries(notas).forEach(([key, val]) => {
+          if (key.endsWith('_critic')) criticas[key] = val;
+          else audiencia[key] = val;
+        });
+
+        let html = `<b>Titulo:</b> ${data.pelicula.toUpperCase()}\n\n`;
+
+        html += `<b>Notas de audiencia:</b>\n`;
+        for (const [k, v] of Object.entries(audiencia)) {
+          const estilo = colorClase(v);
+          if (estilo) html += `${k}: <span style="${estilo}">${v}</span>\n`;
+          else html += `${k}: ${v}\n`;
+        }
+
+        html += `\n<b>Notas de criticas:</b>\n`;
+        for (const [k, v] of Object.entries(criticas)) {
+          const estilo = colorClase(v);
+          if (estilo) html += `${k}: <span style="${estilo}">${v}</span>\n`;
+          else html += `${k}: ${v}\n`;
+        }
+
+        html += `\n<b>Media de criticas:</b> <span style="${colorClase(data.media_criticas)}">${data.media_criticas.toFixed(2)}</span>\n`;
+        html += `<b>Media de audiencia:</b> <span style="${colorClase(data.media_audiencia)}">${data.media_audiencia.toFixed(2)}</span>`;
+
+        resultado.innerHTML = html;
+      })
+      .catch(error => {
+        resultado.textContent = 'Error: ' + error;
+      });
+    }
+  </script>
+
+</body>
+</html>
