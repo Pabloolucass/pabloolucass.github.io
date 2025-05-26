@@ -25,7 +25,7 @@
       }
       resultado.textContent = 'Cargando...';
 
-      fetch('https://server-notas.onrender.com', {
+      fetch('http://127.0.0.1:5000/api/notas', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ pelicula: titulo })
